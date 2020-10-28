@@ -27,19 +27,13 @@
 #include <fstream>
 #include <regex>
 
-#include "../../../settings.h"
+const int maxpu = 80;
 
-void Pufromflat() {
-  //TString filename="/work/jet_tuples/SIM/2016/P8M1/FlatPthat_15to7000.root";
-  //TString filename="/work/jet_tuples/SIM/2016/HS1/FlatPthat_15to7000.root";
-  //TString filename="/work/jet_tuples/SIM/UL18/H7CH3/FlatPthat_15to7000.root";
-  //TString filename="/work/jet_tuples/SIM/UL18/NuGun.root";
-  //TString filename="/work/jet_tuples/SIM/UL18/P8CP5/FlatPthat_15to7000_HEM.root";
-  TString filename="/work/jet_tuples/SIM/UL17/P8CP5/FlatPthat_15to7000.root";
-  TFile *output = new TFile("pileup_MC.root","RECREATE");
-  TFile *f = new TFile((filename).Data());
-  TTree *t = (TTree*) f->Get("ak4/ProcessedTree");
-  TH1D *hist = new TH1D("pileupmc","",jp::maxpu,0,jp::maxpu);
+void Pufromflat(const char* filename, const char* tag = "MC") {
+  TFile *output = new TFile(Form("pileup_%s.root",tag),"RECREATE");
+  TFile *f = new TFile(filename);
+  TTree *t = dynamic_cast<TTree*>(f->Get("ak4/ProcessedTree"));
+  TH1D *hist = new TH1D("pileupmc","",maxpu,0,maxpu);
   t->Draw("EvtHdr_.mTrPu>>pileupmc","EvtHdr_.mWeight");
   output->cd();
   hist->Write();
