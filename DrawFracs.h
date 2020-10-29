@@ -138,12 +138,12 @@ public:
     _dt_typeverb = _dt_type;
     if (_mc_typeverb=="DT") _mc_typeverb = "Data";
     else if (_mc_typeverb=="MC") _mc_typeverb = "Pythia8";
-    else if (_mc_typeverb=="HW") _mc_typeverb = "Herwig++";
+    else if (_mc_typeverb=="HW") _mc_typeverb = "Herwig7";
     else if (_mc_typeverb=="Pthat") _mc_typeverb = "P8 (binned)";
     else if (_mc_typeverb=="HT") _mc_typeverb = "Madgraph+P8";
     if (_dt_typeverb=="DT") _dt_typeverb = "Data";
     else if (_dt_typeverb=="MC") _dt_typeverb = "Pythia8";
-    else if (_dt_typeverb=="HW") _dt_typeverb = "Herwig++";
+    else if (_dt_typeverb=="HW") _dt_typeverb = "Herwig7";
     else if (_dt_typeverb=="Pthat") _dt_typeverb = "P8 (binned)";
     else if (_dt_typeverb=="HT") _dt_typeverb = "Madgraph+P8";
 

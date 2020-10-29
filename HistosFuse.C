@@ -24,10 +24,7 @@ void FuseRecurseFile(TDirectory *indir, TDirectory *indir_nu, TDirectory *outdir
 
 void HistosFuse(string type = "")
 {
-  if (type=="") {
-    type = jp::type;
-    if (!jp::ispy and !jp::ishw) return;
-  }
+  if (type=="") type = jp::type;
 
   TFile *fin = new TFile(Form("output-%s-2a.root",type.c_str()),"READ");
   assert(fin && !fin->IsZombie());

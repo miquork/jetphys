@@ -57,6 +57,7 @@ class HistosFill {
 public :
   TChain          *fChain;   //!pointer to the analyzed TTree or TChain
   Int_t           fCurrent; //!current Tree number in a TChain
+  TTree           *fJEFTree; // A tree for Jet Energy Fraction output
 
   static const Int_t kMaxGenJets_   = 100;
   static const Int_t kMaxPFJetsCHS_ = 100;

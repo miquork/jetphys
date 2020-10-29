@@ -151,57 +151,67 @@ void mk_HistosFill() {
 
     for (auto &fname : jp::dtfiles[eraIdx])
       files.push_back(Form("%s%s%s",p,ps,fname.c_str()));
-  } else if (jp::ispy) {
-    if (jp::pthatbins) {
-      cout << "Running over pthat binned files in pythia8" << endl;
-      cout << "Load trees..." << endl;
+  } else if (jp::ishtb) {
+    cout << "Running over ht binned files in pythia8" << endl;
+    cout << "Load trees..." << endl;
 
-      const char *ps = jp::pthatpath;
+    string path = jp::htpath;
+    if (jp::doMCFix and jp::yid==0) path += "_APV";
 
-      for (auto &fname : jp::pthatfiles) {
-        const char *name1 = Form("%s%s%s.root",p,ps,fname);
-        const char *name2 = Form("%s%s%s_ext.root",p,ps,fname);
-        std::ifstream stream1(name1);
-        std::ifstream stream2(name2);
-        if (stream1.good()) files.push_back(name1);
-        if (stream2.good()) files.push_back(name2);
-      }
-    } else if (jp::htbins) {
-      cout << "Running over ht binned files in pythia8" << endl;
-      cout << "Load trees..." << endl;
-
-      const char *ps = jp::htpath;
-
-      for (auto &fname : jp::htfiles) {
-        const char *name1 = Form("%s%s%s.root",p,ps,fname);
-        const char *name2 = Form("%s%s%s_ext.root",p,ps,fname);
-        std::ifstream stream1(name1);
-        std::ifstream stream2(name2);
-        if (stream1.good()) files.push_back(name1);
-        if (stream2.good()) files.push_back(name2);
-      }
-    } else {
-      cout << "Running over pythia flat sample" << endl;
-
-      for (auto &fname : jp::mcfiles.at(jp::p8file))
-        files.push_back(Form("%s%s",p,fname));
+    for (auto &fname : jp::htfiles) {
+      const char *name1 = Form("%s%s%s.root",p,path.c_str(),fname);
+      const char *name2 = Form("%s%s%s_ext.root",p,path.c_str(),fname);
+      std::ifstream stream1(name1);
+      std::ifstream stream2(name2);
+      if (stream1.good()) files.push_back(name1);
+      if (stream2.good()) files.push_back(name2);
     }
+  } else if (jp::ispthb) {
+    cout << "Running over pthat binned files in pythia8" << endl;
+    cout << "Load trees..." << endl;
+
+    string path = jp::pthatpath;
+    if (jp::doMCFix and jp::yid==0) path += "_APV";
+
+    for (auto &fname : jp::pthatfiles) {
+      const char *name1 = Form("%s%s%s.root",p,path.c_str(),fname);
+      const char *name2 = Form("%s%s%s_ext.root",p,path.c_str(),fname);
+      std::ifstream stream1(name1);
+      std::ifstream stream2(name2);
+      if (stream1.good()) files.push_back(name1);
+      if (stream2.good()) files.push_back(name2);
+    }
+  } else if (jp::ispy or jp::ishw or jp::isnu) {
+    string ftag = "";
+    if (jp::ispy) {
+      ftag = jp::p8file;
+      if (jp::doMCFix) {
+        if (jp::yid==0) ftag += "APV";
+        else if (jp::yid==3) ftag += "HEM";
+      }
+      cout << "Running over pythia flat sample" << endl;
+    } else if (jp::ishw) {
+      ftag = jp::hwfile;
+      if (jp::doMCFix and jp::yid==0) ftag += "APV";
+      cout << "Running over Herwig flat sample" << endl;
+    } else {
+      ftag = jp::nufile;
+      if (jp::doMCFix and jp::yid==0) ftag += "APV";
+      else if (jp::yid==3) ftag += "HEM";
+      cout << "Running over Single Neutrino sample" << endl;
+    }
+
+    for (const auto &fname : jp::mcfiles.at(ftag))
+      files.push_back(Form("%s%s",p,fname));
   } else if (jp::ishw) {
-    if (jp::pthatbins) cout << "No pthat binned files exist for Herwig!" << endl;
-    else if (jp::htbins) cout << "No ht binned files exist for Herwig!" << endl;
 
-    cout << "Running over Herwig flat sample" << endl;
-
-    for (auto &fname : jp::mcfiles.at(jp::hwfile)) files.push_back(Form("%s%s",p,fname));
+    for (const auto &fname : jp::mcfiles.at(jp::hwfile)) files.push_back(Form("%s%s",p,fname));
   } else if (jp::isnu) {
-    if (jp::pthatbins) cout << "No pthat binned files exist for Neutrino Gun!" << endl;
-    else if (jp::htbins) cout << "No ht binned files exist for Neutrino Gun!" << endl;
 
-    cout << "Running over HSingle Neutrino sample" << endl;
-
-    for (auto &fname : jp::mcfiles.at(jp::nufile)) files.push_back(Form("%s%s",p,fname));
+    for (const auto &fname : jp::mcfiles.at(jp::nufile)) files.push_back(Form("%s%s",p,fname));
   } else {
     cout << "Enter a proper type!!" << endl;
+    return;
   }
 
   if (files.size()==0) {
@@ -210,18 +220,14 @@ void mk_HistosFill() {
       cout << "Entered: " << jp::run << endl << "Options:";
       for (auto &fname : jp::eras) cout << " " << fname;
       cout << endl;
-    } else if (jp::ispy or jp::ishw or jp::isnu) {
-      if (jp::pthatbins) {
-        cout << "Problems with pthat file logic!" << endl;
-      } else if (jp::htbins) {
-        cout << "Problems with ht file logic!" << endl;
-      } else {
-        cout << "Enter a proper value for MC tag!" << endl;
-        cout << "Entered: " << jp::p8file << endl << "Options:";
-        for (auto &fname : jp::mcfiles) cout << " " << fname.first;
-        cout << endl;
-      }
+    } else if (jp::ishtb) {
+      cout << "Problems with ht file logic!" << endl;
+    } else if (jp::ispthb) {
+      cout << "Problems with pthat file logic!" << endl;
+    } else {
+      cout << "Unknown error!" << endl;
     }
+    return;
   } else {
     cout << "Loading the files:" << endl;
     for (auto &fname : files) {

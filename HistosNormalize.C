@@ -222,7 +222,7 @@ void recurseNormFile(TDirectory *indir, TDirectory *outdir, bool isdt, double et
         double norm0 = etawid;
 
         // Let's divide by a magical number. This is totally OK (disabled).
-        // if (!isdt and !jp::pthatbins) norm0 /= 2500.; //(xsecw / (sumw * adhocw) ); // equals 2551.;
+        // if (jp::isp8) norm0 /= 2500.; //(xsecw / (sumw * adhocw) ); // equals 2551.;
 
         bool isgen = TString(obj2->GetName()).Contains("pt_g");
         bool isoth = (TString(obj2->GetName()).Contains("pt_no") ||

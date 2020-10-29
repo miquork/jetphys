@@ -41,45 +41,41 @@ using std::regex;
 // This resembles "DEBUG" in the way that it acts as a safeguard against naive mistakes, but eats performance.
 #define EXPERT 0
 // Values 0/1. Set to 1 to perform jet resolution correction in MC, 0 otherwise.
-#define JETRESO 0
+#define JETRESO 1
 // New handling for triggers etc.; possibility to comment this out is left for legacy use.
 #define NEWMODE
 
 namespace jp {
   //{ BEGIN fundamental settings: these are the ones that need most often changes
-  // Data type "DATA"/"MC"/"HW"/"NU".
-  // "MC" stands for Pythia8 for flat ntuples and pthat binned ntuples, and Madgraph+Pythia8 for htbinned ntuples.
-  constexpr const char* type = "DATA";
+  // Sample type "DATA"/"NU"/"HW"/"MC"/"HT"/"PT" (ends up in the file name).
+  // DATA = Real detector data (JetHT+ZeroBias triggers), NU = Neutrino Gun, HW = Herwig7
+  // MC = Flat-Pthat Pythia8, HT = HT-binned Madgraph+Pythia8, PT = Pthat-binned Pythia8
+  constexpr const char* type = "HT";
   // For DATA, set dataset, for MC. See eras_ for further info.
-  // 16: B/C/D/E/Fe/Fl/G/H/BCD/EF/GH/BCDEFGH
+  // 16: B/C/D/E/Fe/Fl/G/H/BCD/EF/GH/BCDEF/BCDEFGH
   // 17: B/C/D/E/F/BCDEF
   // 17 specials: H*Fwd/H,
   // 18: A/B/C/D/ABCD
-  const string run = "A";
+  const string run = "C";
   // Which run year are we analyzing?
-  const unsigned int yid = 3; // 0:2016, 1:2017, 2:2017 LowPU, 3:2018
+  const unsigned int yid = 0; // 0:2016, 1:2017, 2:2017 LowPU, 3:2018
   // Number of events to process (-1 for all)
   constexpr Long64_t nentries =
-  -1; // all
+  //-1; // all
   //10; // debug
   //100; //debug
-  //1000;
+  1000;
   //10000; // shorter test run
   //100000; // short test run
   //1000000; // shortish test run
   //2500000; // shortish test run
   //10000000;
 
-  // Do we use pthat binned MC (if not, we use flat or htbinned)
-  constexpr bool pthatbins = false;
-  // Do we use ht binned MC (if not, we use flat; if yes pthatbins must be set to false)
-  constexpr bool htbins = false;
-
   // The base location of files that are to be used. The user should check that the listings under "*path_" and "*files_" are found
   // under this base location. The complete path is of the form 'filepath+dt/mcpath+filename' (see mk_HistosFill.C).
   constexpr const char* filepath = "/work/jet_tuples/"; // "root://eoscms.cern.ch//eos/cms/store/group/phys_smp/Multijet/13TeV/";
   // Use output-MC-1 instead of MC-2b (or NLOxNP) in dagostini.C
-  constexpr bool dagfile1 = false; // true;
+  constexpr bool dagfile1 = false;
 
   // Number of events to skip from the beginning (for debugging)
   constexpr Long64_t nskip = 0;
@@ -109,6 +105,12 @@ namespace jp {
   // Toggle development histos
   constexpr bool doMpfHistos = false;
 
+  // Create a compact tree for Jet Energy Fraction comparison in a separate file.
+  constexpr bool doFracTree = true;
+
+  // Toggle MC fix when possible (APV for BCDEFe in UL16 and HEM for CD in UL18)
+  constexpr bool doMCFix = false;
+
   // In the newest ntuples (19 onwards), MET filters may be saved separately, as before these.
   // Hence, it is essential to keep the MET filtering manually on (except if the user knows what (s)he is doing).
   constexpr bool fetchMETFilters = true;
@@ -118,7 +120,7 @@ namespace jp {
   // Eta phi exclusion due to hot or cold ECAL/HCAL regions (produced with dataequality.C).
   // Note: the output-*.root files are originally used for the production of the exclusion zones.
   // Hence, the user should no whether she/he is producing or applying the hot zone vetos.
-  constexpr bool doVetoHot = true;
+  constexpr bool doVetoHot = false;
   const constexpr array<const char*,yrs> hotfile_ = {
     "/work/jet_tuples/JECDatabase/jet_veto_maps/Summer19UL17_V2/hotjets-UL17_v2.root",
     "/work/jet_tuples/JECDatabase/jet_veto_maps/Summer19UL17_V2/hotjets-UL17_v2.root",
@@ -156,9 +158,11 @@ namespace jp {
   const constexpr char* json = json_.at(yid);
 
   // Calculate luminosity on the fly based on .csv file and take only events with non-zero luminosity.
+  // NOTE: 69.2 mb is generally the preferred value for the min bias xsec.
+  // For the avgpu numbers there seems to be an exception: brilcalc is expected to run with the default value of 80 mb.
   constexpr bool dolumi = true;
   const constexpr array<const char*,yrs> lumifile_ = {
-    "lumicalc/lumibyls16.csv",
+    "lumicalc/lumibylsul16_80.csv",
     "lumicalc/lumibylsul17_80.csv",
     "lumicalc/lumibyls17h.csv",
     "lumicalc/lumibylsul18_80.csv"
@@ -168,7 +172,7 @@ namespace jp {
   // For debugging, allows the user to skip L2L3Res JEC in Data.
   constexpr bool skipl2l3res = false;
   // Allow preliminary results before l2l3res is released
-  constexpr bool usel2res = false;
+  constexpr bool usel2res = true;
   // Load MC triggers from the file
   constexpr bool loadMCTrigs = true;
   // Decide whether or not to simulate triggers from MC (this is slow, used only if loadMCTrigs is not set)
@@ -215,10 +219,11 @@ namespace jp {
   // Trigger lumis for weighting in /ub
   const array<vector<double>,yrs> triglumi_ = {{
   // ZB         PFJ40      PFJ60       PFJ80       PFJ140       PFJ200        PFJ260        PFJ320         PFJ400         PFJ450          PFJ500
-    { 29036.821,250019.11 ,676345.122,2602658.803,22609385.05 , 96089534.929,559334225.38 ,1663980103.656,4870543838.98 ,34184232596.775                }, // 2016
+    { 29047.493,264343.276,718848.025,2727753.968,23952336.596,102684610.136,587590111.591,1754045277.045,5140094232.507,35920114665.106                }, // UL16
+//  { 29036.821,250019.11 ,676345.122,2602658.803,22609385.05 , 96089534.929,559334225.38 ,1663980103.656,4870543838.98 ,34184232596.775                }, // 2016
     { 75027.459,340221.288,997084.982,4168897.983,39722550.447,218677919.676,554867541.537,1406384811.894,4211720261.534,10453579017.756,41471176941.094}, // UL17
 //  { 75086.268,340487.186,998075.452,4171433.311,39740193.824,218749681.165,555199860.716,1407215678.758,4213837750.579,10451819594.184,41521111348.432}, // 2017
-    {     1.   ,     1.   ,     1.   ,      1.   ,       1.   ,        1.   ,        1.}, // H Dummy values
+    {     1.   ,     1.   ,     1.   ,      1.   ,       1.   ,        1.   ,        1.}, // H17 Dummy values
     { 78643.291,237048.793,790239.589,5094934.929,47770908.492,205673905.875,468317872.633,1802615957.050,3719625212.442, 7395671811.765,58889566728.672}  // UL18
 //  { 75831.608,231122.765,764683.719,4998554.8  ,46417090.061,199877328.665,455315402.462,1751671521.33 ,3618303294.319, 7193355038.764,57269453309.189}  // 2018
   }}; // in /ub
@@ -245,14 +250,22 @@ namespace jp {
   // 2016 values: (zb,jt40-jt450)
     {{
   //   ZB        PFJ40     PFJ60      PFJ80       PFJ140      PFJ200       PFJ260        PFJ320        PFJ400         PFJ450              Era
-      {12272.564,42777.404,154339.679,1013725.894,6678362.048,31439255.077,138379573.748,423036630.016,1156112123.522,5780974274.166}, // B
-      { 1267.369,21826.26 , 62136.999, 197392.975,2000961.79 ,10062309.79 , 48166077.979,135218220.578, 412946722.943,2573399420.069}, // C
-      { 1898.671,36624.724,104611.27 , 328062.586,3357266.779,16824336.184, 76550163.736,225203181.004, 683469876.284,4248383597.366}, // D
-      { 3011.27 ,31294.62 , 86426.534, 270224.019,2763649.831,13071806.045, 65431121.382,191469713.187, 583096480.718,4008663475.924}, // E
-      { 1504.894,21653.271, 48745.957, 136195.575,1491075.627, 6052884.716, 38701199.163,116084466.056, 348342950.9  ,2704118419.004}, // Fe
-      {  215.493, 2828.924,  7205.162,  18382.409, 204124.035,  681254.62 ,  6502077.341, 18270869.363,  53084258.548, 397499983.002}, // Fl
-      { 3165.916,48839.939,123669.326, 370518.873,3628983.85 ,11996221.263,102627755.009,310855295.835, 921468153.924,7540487746.602}, // G
-      { 5700.644,58972.432,131684.466, 398826.083,3841266.079,12723493.628,111360342.779,333826688.043, 982546425.482,8605689857.939}  // H
+      {12237.409,42517.692,153587.241,1006204.990,6645924.799,31232743.032,137676129.226,420934503.434,1149913168.345,5746470151.198}, // B UL
+  //  {12272.564,42777.404,154339.679,1013725.894,6678362.048,31439255.077,138379573.748,423036630.016,1156112123.522,5780974274.166}, // B
+      { 1269.899,21858.376, 62239.902, 197698.111,2003829.200,10076877.987, 48239572.342,135426135.565, 413490650.367,2576487486.486}, // C UL
+  //  { 1267.369,21826.26 , 62136.999, 197392.975,2000961.79 ,10062309.79 , 48166077.979,135218220.578, 412946722.943,2573399420.069}, // C
+      { 1895.986,36559.077,104420.066, 327468.107,3351211.202,16794075.528, 76412824.981,224804477.458, 682245063.175,4242291556.970}, // D UL
+  //  { 1898.671,36624.724,104611.27 , 328062.586,3357266.779,16824336.184, 76550163.736,225203181.004, 683469876.284,4248383597.366}, // D
+      { 3024.894,31380.662, 86645.340, 270902.565,2770677.760,13101065.209, 65604141.510,192005095.649, 584662555.693,4023903775.539}, // E UL
+  //  { 3011.27 ,31294.62 , 86426.534, 270224.019,2763649.831,13071806.045, 65431121.382,191469713.187, 583096480.718,4008663475.924}, // E
+      { 1486.829,20957.361, 48298.210, 134617.533,1474417.856, 5974152.669, 38233815.113,115167810.171, 344673380.029,2690525648.960}, // Fe UL
+  //  { 1504.894,21653.271, 48745.957, 136195.575,1491075.627, 6052884.716, 38701199.163,116084466.056, 348342950.9  ,2704118419.004}, // Fe
+      {  222.825, 2896.737,  7379.696,  18805.763, 209688.811,  697508.206,  6649935.899, 18700720.635,  54307230.832, 413983458.790}, // Fl UL
+  //  {  215.493, 2828.924,  7205.162,  18382.409, 204124.035,  681254.62 ,  6502077.341, 18270869.363,  53084258.548, 397499983.002}, // Fl
+      { 3180.743,49006.682,124091.048, 371729.985,3641189.529,12037166.480,102978627.911,311913044.952, 924585289.798,7575824256.098}, // G UL
+  //  { 3165.916,48839.939,123669.326, 370518.873,3628983.85 ,11996221.263,102627755.009,310855295.835, 921468153.924,7540487746.602}, // G
+      { 5728.911,59166.688,132186.522, 400326.915,3855397.440,12771021.024,111795064.609,335093489.181, 986216894.268,8650628331.064}  // H UL
+  //  { 5700.644,58972.432,131684.466, 398826.083,3841266.079,12723493.628,111360342.779,333826688.043, 982546425.482,8605689857.939}  // H
     }},
   // 2017 values: (zb,jt40-jt500)
     {{
@@ -297,16 +310,16 @@ namespace jp {
 
   const array<string,yrs> jergt_ = {
     "Summer16",
-    "Fall17",
-    "Fall17",
-    "Autumn18"
+    "Summer19UL17",
+    "Summer19UL17",
+    "Summer19UL18"
   };
   const string jergt = jergt_.at(yid);
   const array<string,yrs> jervers_ = {
     "_25nsV1",
-    "_V3",
-    "_V3",
-    "_V4"
+    "_JRV2",
+    "_JRV2",
+    "_JRV2"
   };
   const string jervers = jervers_.at(yid);
 
@@ -316,7 +329,7 @@ namespace jp {
     {""},
     {""},
     {""}, // Run2017F is used for Run2017H (lowpu)
-    {"RunABC_","RunD_"}
+    {""}
   }};
   const vector<string> JERIOVnames = JERIOVnames_.at(yid);
   // Trigger IOVs: the 1 for -inf and 400000 for inf (currently)
@@ -339,14 +352,14 @@ namespace jp {
     "_V20",
     "_V5",
     "_V5",
-    "_V3"
+    "_V5"
   };
   const string jecversdt = jecversdt_.at(yid);
   const array<string,yrs> jecversmc_ = {
     "_V20",
     "_V5",
     "_V5",
-    "_V2"
+    "_V5"
   };
   const string jecversmc = jecversmc_.at(yid);
   const array<string,yrs> jectag_ = {
@@ -420,28 +433,32 @@ namespace jp {
     //{ BEGIN MC: Generic options
     const array<map<string,vector<const char*>>,yrs> mcfiles_ = {{
       {
-        {"P8M1" ,{"MC/2016/P8M1/FlatPthat_15to7000.root"}},
-        {"H7CH3",{"MC/2016/HS1/FlatPthat_15to7000.root"}},
-        {"NU"   ,{"MC/2016/NuGun.root"}}
+        {"P8M1"    ,{"MC/2016/P8M1/FlatPthat_15to7000.root"}},      // P8M1 has been removed from UL runs
+        {"P8CP5"   ,{"MC/UL16/P8CP5/FlatPthat_15to7000.root"}},     // For FlGH
+        {"P8CP5APV",{"MC/UL16/P8CP5/FlatPthat_15to7000_APV.root"}}, // For BCDEFe (APV/HIPM)
+        {"H7CH3"   ,{"MC/UL16/H7CH3/FlatPthat_15to7000.root"}},     // For FlGH
+        {"H7CH3APV",{"MC/UL16/H7CH3/FlatPthat_15to7000_APV.root"}}, // For BCDEFe (APV/HIPM)
+        {"NU"      ,{"MC/UL16/NuGun.root"}},                        // For FlGH
+        {"NUAPV"   ,{"MC/UL16/NuGun_APV.root"}}                     // For BCDEFe (APV/HIPM)
       },
       {
-        {"P8M1" ,{"MC/2017/P8M1/FlatPthat_15to7000.root"}},
-        {"P8CP5",{"MC/UL17/P8CP5/FlatPthat_15to7000.root"}},
-        {"HS1"  ,{"MC/UL17/H7CH3/FlatPthat_15to7000.root"}},
-        {"NU"   ,{"MC/UL17/NuGun.root"}}
-      },
-      {
-        {"P8M1" ,{"MC/2017/P8M1/FlatPthat_15to7000.root"}},
+        {"P8M1" ,{"MC/2017/P8M1/FlatPthat_15to7000.root"}}, // P8M1 has been removed from UL runs
         {"P8CP5",{"MC/UL17/P8CP5/FlatPthat_15to7000.root"}},
         {"H7CH3",{"MC/UL17/H7CH3/FlatPthat_15to7000.root"}},
         {"NU"   ,{"MC/UL17/NuGun.root"}}
       },
       {
-        {"P8CP5"   ,{"MC/UL18/P8CP5/FlatPthat_15to7000.root"}}, // Still flat PU, for AB
-        {"P8CP5HEM",{"MC/UL18/P8CP5/FlatPthat_15to7000_HEM.root"}}, // Still flat PU, for CD
-        {"H7CH3"   ,{"MC/UL18/H7CH3/FlatPthat_15to7000.root"}},
-        {"NU"      ,{"MC/UL18/NuGun.root"}}, // Still flat PU, for AB
-        {"NUHEM"   ,{"MC/UL18/NuGun_HEM.root"}} // Still flat PU, for CD
+        {"P8M1" ,{"MC/2017/P8M1/FlatPthat_15to7000.root"}}, // P8M1 has been removed from UL runs
+        {"P8CP5",{"MC/UL17/P8CP5/FlatPthat_15to7000.root"}},
+        {"H7CH3",{"MC/UL17/H7CH3/FlatPthat_15to7000.root"}},
+        {"NU"   ,{"MC/UL17/NuGun.root"}}
+      },
+      {
+        {"P8CP5"   ,{"MC/UL18/P8CP5/FlatPthat_15to7000.root"}},     // Flat PU, for AB
+        {"P8CP5HEM",{"MC/UL18/P8CP5/FlatPthat_15to7000_HEM.root"}}, // Flat PU, for CD (HEM-corrected)
+        {"H7CH3"   ,{"MC/UL18/H7CH3/FlatPthat_15to7000.root"}},     // Only AB-compatible Herwig is given
+        {"NU"      ,{"MC/UL18/NuGun.root"}},                        // Flat PU, for AB
+        {"NUHEM"   ,{"MC/UL18/NuGun_HEM.root"}}                     // Flat PU, for CD (HEM-corrected)
       }
     }};
     const map<string,vector<const char*>> mcfiles = mcfiles_.at(yid);
@@ -495,7 +512,7 @@ namespace jp {
     //{ BEGIN MC: Process HTbinned file options
     // All the following values need to be updated, if other source tuples are used.
     const array<const char*,yrs> htpath_ = {
-      "MC/2016/MGP8M1/",
+      "MC/UL16/MGP8CP5/",
       "MC/UL17/MGP8CP5/",
       "MC/UL17/MGP8CP5/",
       "MC/UL18/MGP8CP5/"
@@ -542,10 +559,10 @@ namespace jp {
     constexpr const double maxpu = 80.0;
 
     const array<string,yrs> pudtpath_ =
-      {"pileup/DT/16_LRRAUG","pileup/DT/17_UL","pileup/DT/17_RRMAR","pileup/DT/18_UL"};
+      {"pileup/DT/16_UL","pileup/DT/17_UL","pileup/DT/17_RRMAR","pileup/DT/18_UL"};
     const string pudtpath = pudtpath_.at(yid);
     const array<string,yrs> pumcpath_ =
-      {"pileup/MC/16","pileup/MC/ul17","pileup/MC/17","pileup/MC/ul18"};
+      {"pileup/MC/ul16","pileup/MC/ul17","pileup/MC/17","pileup/MC/ul18"};
     const string pumcpath = pumcpath_.at(yid);
     //} END MC pileup files
 
@@ -752,13 +769,17 @@ namespace jp {
   constexpr bool strings_equal(char const * a, char const * b) { return *a == *b and (*a == '\0' or strings_equal(a + 1, b + 1)); }
 
   // Simple helper for dataset type
-  constexpr bool isdt = strings_equal(type,"DATA");
-  constexpr bool ismc = !isdt;
-  constexpr bool ispy = strings_equal(type,"MC");
-  constexpr bool ishw = strings_equal(type,"HW");
-  constexpr bool isnu = strings_equal(type,"NU");
+  constexpr bool isdt   = strings_equal(type,"DATA");
+  constexpr bool ismc   = !isdt;
+  constexpr bool ishtb  = strings_equal(type,"HT");
+  constexpr bool ispthb = strings_equal(type,"PT");
+  constexpr bool ispy   = strings_equal(type,"MC");
+  constexpr bool ishw   = strings_equal(type,"HW");
+  constexpr bool isnu   = strings_equal(type,"NU");
   // In case of a flat MC, choose file (all options given in mcfiles).
-  constexpr const char* p8file = yid==0 ? "P8M1" : "P8CP5";
+  constexpr const char* p8file = "P8CP5";
+  constexpr const char* ptfile = "P8Bins";
+  constexpr const char* mgfile = "P8MG";
   constexpr const char* hwfile = "H7CH3";
   constexpr const char* nufile = "NU";
 

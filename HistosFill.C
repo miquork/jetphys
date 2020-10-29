@@ -77,11 +77,10 @@ bool HistosFill::Init(TChain *tree)
     return false; // With no tree, Loop will be interrupted
   }
   string type = jp::type;
-  if (jp::pthatbins) type = "Pthat";
-  else if (jp::htbins) type = "HT";
+  if (jp::ispthb) type = "Pthat";
   _outfile = new TFile(Form("output-%s-1.root",type.c_str()), "NEW");
   if (!_outfile or _outfile->IsZombie()) {
-    PrintInfo(Form("Opening the output file output-%s-1.root failed. Check if the file already exists.",jp::type),false);
+    PrintInfo(Form("Opening the output file output-%s-1.root failed. Check if the file already exists.",type.c_str()),false);
     return false;
   }
 
@@ -523,7 +522,7 @@ bool HistosFill::PreRun()
   _trgcounter = _evtcounter = _totcounter = 0;
 
   // Initialize _binnedmcweight. It will be loaded for each tree separately.
-  if (jp::pthatbins or jp::htbins) {
+  if (jp::ispthb or jp::ishtb) {
     _binnedmcweight = 0;
     _binnedmcrepeats = 0;
   }
@@ -544,7 +543,7 @@ bool HistosFill::PreRun()
     PrintInfo(Form("%s histograms with a full eta-range",jp::doEtaHistos ? "Storing" : "Not storing"));
   } else if (jp::ismc) {
     PrintInfo(Form("%s pileup profile in MC to data",jp::reweighPU ? "Reweighting" : "Not reweighting"));
-    PrintInfo(Form("Processing %s samples", jp::pthatbins ? "pThat binned" : "\"flat\""));
+    PrintInfo(Form("Processing %s samples", jp::ispthb ? "pThat binned" : "\"flat\""));
   }
   *ferr << endl;
 
@@ -1204,7 +1203,7 @@ bool HistosFill::AcceptEvent()
   _w0 = 1.0;
   if (jp::ismc) {
     _w0 *= weight;
-    if (jp::pthatbins or jp::htbins) _w0 *= _binnedmcweight;
+    if (jp::ispthb or jp::ishtb) _w0 *= _binnedmcweight;
     assert(_w0>0);
   }
   _w = _w0;
@@ -1215,7 +1214,7 @@ bool HistosFill::AcceptEvent()
     // Gen Jet loop
     ///////////////
     // For SingleNeutrino and the HT binned MG samples, emulate PtHat using a jet ht sum.
-    bool doht = jp::isnu or (jp::htbins and !jp::pthatbins);
+    bool doht = jp::isnu or jp::ishtb;
     double htsum = 0.0;
     for (int gjetidx = 0; gjetidx != gen_njt; ++gjetidx) {
       genp4.SetPxPyPzE(gen_jtp4x[gjetidx],gen_jtp4y[gjetidx],gen_jtp4z[gjetidx],gen_jtp4t[gjetidx]);
@@ -1455,7 +1454,7 @@ void HistosFill::FillSingleBasic(HistosBasic *h)
   if (_w <= 0) return;
   if (_do80mb) _w80 = _w0 * _wt80[h->trigname];
   double wtrig = _wt[h->trigname];
-  if (jp::pthatbins or jp::htbins) wtrig *= _binnedmcweight;
+  if (jp::ispthb or jp::ishtb) wtrig *= _binnedmcweight;
 
   bool fired = (_trigs.find(h->trigname)!=_trigs.end());
   if (!fired) return;
@@ -2394,6 +2393,7 @@ void HistosFill::FillSingleEta(HistosEta *h, Float_t* _pt, Float_t* _eta, Float_
       assert(h->petaphi_hhf); h->petaphi_hhf->Fill(eta, phi, jthhf[jetidx], _w);
       assert(h->petaphi_hef); h->petaphi_hef->Fill(eta, phi, jthef[jetidx], _w);
       assert(h->petaphi_puf); h->petaphi_puf->Fill(eta, phi, jtbetaprime[jetidx], _w);
+      //if (jp::doFrac
     }
   }
 
@@ -3383,15 +3383,18 @@ bool HistosFill::LoadPUProfiles(bool do80)
 {
   string datafile = jp::pudtpath + (do80 ? "80mb/" : "/") + jp::run + "/pileup_DT.root";
   string mcfile   = jp::pumcpath + "/pileup_";
-  if (jp::isnu)      mcfile += jp::nufile;
-  else if (jp::ishw) mcfile += jp::hwfile;
-  else if (jp::ispy) {
-    if (jp::pthatbins)   mcfile += "P8Bins";
-    else if (jp::htbins) mcfile += "P8MG";
-    else                 mcfile += jp::p8file;
-  } else {
+  if (jp::ispthb)     mcfile += jp::ptfile;
+  else if (jp::ishtb) mcfile += jp::mgfile;
+  else if (jp::isnu)  mcfile += jp::nufile;
+  else if (jp::ispy)  mcfile += jp::p8file;
+  else if (jp::ishw)  mcfile += jp::hwfile;
+  else {
     PrintInfo("Problems with PU file types!",true);
     return false;
+  }
+  if (jp::doMCFix) {
+    if (jp::yid==0) mcfile += "APV";
+    else if (jp::yid==3 and (jp::ispy or jp::isnu)) mcfile += "HEM";
   }
   mcfile += ".root";
 
@@ -3457,7 +3460,7 @@ Int_t HistosFill::FindMCSliceIdx(string filename)
 {
   int sliceIdx = 0;
   bool sliceFound = false;
-  if (jp::pthatbins) {
+  if (jp::ispthb) {
     for (auto &fname : jp::pthatfiles) {
       regex rfile(fname);
       std::cmatch mfile;
@@ -3467,7 +3470,7 @@ Int_t HistosFill::FindMCSliceIdx(string filename)
       }
       ++sliceIdx;
     }
-  } else if (jp::htbins) {
+  } else if (jp::ishtb) {
     for (auto &fname : jp::htfiles) {
       regex rfile(fname);
       std::cmatch mfile;
@@ -3523,24 +3526,21 @@ Long64_t HistosFill::LoadTree(Long64_t entry)
       *ferr << endl << flush;
     }
 
-    if (jp::ismc and (jp::pthatbins or jp::htbins)) {
-      // If there are two pthat files with the same pthat range, we convey this information through "prevweight"
-      bool htmode = !jp::pthatbins;
-      const char* bintag = htmode ? "HT" : "Pthat";
+    if (jp::ispthb or jp::ishtb) {
       Long64_t noevts = fChain->GetTree()->GetEntries();
       if (_binnedmcrepeats<=0) {
         const char* fname = fChain->GetCurrentFile()->GetName();
         // Check the position of the current file in the list of file names
         int sliceIdx = FindMCSliceIdx(fname);
         if (sliceIdx<0) {
-          PrintInfo(Form("%s slice file name contradictory %s. Aborting...",bintag,fname));
+          PrintInfo(Form("%s slice file name contradictory %s. Aborting...",jp::type,fname));
           return -3;
         }
-        if ((!htmode and jp::pthatsigmas[sliceIdx]<=0) or (htmode and jp::htsigmas[sliceIdx]<=0)) {
-          PrintInfo(Form("Suspicious %s information for file %s. Aborting...",bintag,fname));
+        if ((jp::ispthb and jp::pthatsigmas[sliceIdx]<=0) or (jp::ishtb and jp::htsigmas[sliceIdx]<=0)) {
+          PrintInfo(Form("Suspicious %s information for file %s. Aborting...",jp::type,fname));
           return -3;
         }
-        PrintInfo(Form("%s bin changing.\nFile %d %s, position %lld with %lld events.",bintag,sliceIdx,fname,centry,noevts),true);
+        PrintInfo(Form("%s bin changing.\nFile %d %s, position %lld with %lld events.",jp::type,sliceIdx,fname,centry,noevts),true);
 
         _binnedmcrepeats = 0;
         // We have a look if the next tree in the chain has the same range
@@ -3554,7 +3554,7 @@ Long64_t HistosFill::LoadTree(Long64_t entry)
           const char* nextname = fChain->GetCurrentFile()->GetName();
           int nextIdx = FindMCSliceIdx(nextname);
           if (nextIdx<0) {
-            PrintInfo(Form("%s slice file name contradictory %s. Aborting...",bintag,nextname));
+            PrintInfo(Form("%s slice file name contradictory %s. Aborting...",jp::type,nextname));
             return -3;
           }
           if (sliceIdx!=nextIdx) break;
@@ -3563,19 +3563,19 @@ Long64_t HistosFill::LoadTree(Long64_t entry)
           ++_binnedmcrepeats;
         }
         // Normalization with the amount of entries within the current tree
-        double sigmacurr = htmode ? jp::htsigmas[sliceIdx  ] : jp::pthatsigmas[sliceIdx  ];
-        double slicecurr = htmode ? jp::htranges[sliceIdx  ] : jp::pthatranges[sliceIdx  ];
-        double slicenext = htmode ? jp::htranges[sliceIdx+1] : jp::pthatranges[sliceIdx+1];
+        double sigmacurr = jp::ishtb ? jp::htsigmas[sliceIdx  ] : jp::pthatsigmas[sliceIdx  ];
+        double slicecurr = jp::ishtb ? jp::htranges[sliceIdx  ] : jp::pthatranges[sliceIdx  ];
+        double slicenext = jp::ishtb ? jp::htranges[sliceIdx+1] : jp::pthatranges[sliceIdx+1];
         _binnedmcweight  = sigmacurr/noevts;
         // This is a normalization procedure by the luminosity of the furthest PtHat/HT bin.
         // In practice, it does not hurt if the normalevts number is arbitrary.
-        _binnedmcweight /= (htmode ? (jp::htsigmas.back()/jp::htnormalevts) : (jp::pthatsigmas.back()/jp::pthatnormalevts));
+        _binnedmcweight /= (jp::ishtb ? (jp::htsigmas.back()/jp::htnormalevts) : (jp::pthatsigmas.back()/jp::pthatnormalevts));
         PrintInfo(Form("The given slice has the %s range [%f,%f]\nWeight: %f, with a total x-sec %f pb and %lld events.",
-                  bintag,slicecurr,slicenext,_binnedmcweight,sigmacurr,noevts),true);
+                  jp::type,slicecurr,slicenext,_binnedmcweight,sigmacurr,noevts),true);
       } else {
         --_binnedmcrepeats;
         PrintInfo(Form("%s bin remains the same while file is changing.\nFile %s\nWeight: %f",
-                  bintag,fChain->GetCurrentFile()->GetName(),_binnedmcweight),true);
+                  jp::type,fChain->GetCurrentFile()->GetName(),_binnedmcweight),true);
       }
     } // slices with PtHat/HT bins
   }

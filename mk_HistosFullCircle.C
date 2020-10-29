@@ -24,8 +24,8 @@ void mk_HistosFullCircle() {
   bool doall    = true;
   // Choose one: 0:16BCD,1:16EF,2:16GH,3:16BCDEFGH
   //             4:17B,5:17C,6:17D,7:17E,8:17F,9:17BCDEF
-  //             10:18A,11:18B,12:18C,13:18D,14:18ABCD
-  int lumidx = 9;
+  //             10:18A,11:18B,12:18C,13:18D,14:18ABCD,15:AB,16:CD
+  int lumidx = 15;
 
   // Output-*-2*.root files:
   if (dooutput) {
@@ -101,7 +101,7 @@ void mk_HistosFullCircle() {
         mctypes.push_back("HW");
         dotfracs.push_back(true);
       }
-      if (dohw) {
+      if (doht) {
         savedirs.push_back("htpdf");
         mctypes.push_back("HT");
         dotfracs.push_back(true);
@@ -158,6 +158,12 @@ void mk_HistosFullCircle() {
     } else if (lumidx==14) {
       title="2018ABCD";
       lumit="53.27 fb^{-1}";
+    } else if (lumidx==15) {
+      title="2018AB";
+      lumit="21.09 fb^{-1}";
+    } else if (lumidx==16) {
+      title="2018CD";
+      lumit="37.80 fb^{-1}";
     } else {
       cout << "Lumi index erroneous, check your value: " << lumidx << endl;
       return;
