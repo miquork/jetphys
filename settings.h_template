@@ -50,21 +50,21 @@ namespace jp {
   // Sample type "DATA"/"NU"/"HW"/"MC"/"HT"/"PT" (ends up in the file name).
   // DATA = Real detector data (JetHT+ZeroBias triggers), NU = Neutrino Gun, HW = Herwig7
   // MC = Flat-Pthat Pythia8, HT = HT-binned Madgraph+Pythia8, PT = Pthat-binned Pythia8
-  constexpr const char* type = "HT";
+  constexpr const char* type = "MC";
   // For DATA, set dataset, for MC. See eras_ for further info.
   // 16: B/C/D/E/Fe/Fl/G/H/BCD/EF/GH/BCDEF/BCDEFGH
   // 17: B/C/D/E/F/BCDEF
   // 17 specials: H*Fwd/H,
   // 18: A/B/C/D/ABCD
-  const string run = "C";
+  const string run = "GH";
   // Which run year are we analyzing?
   const unsigned int yid = 0; // 0:2016, 1:2017, 2:2017 LowPU, 3:2018
   // Number of events to process (-1 for all)
   constexpr Long64_t nentries =
-  //-1; // all
+  -1; // all
   //10; // debug
   //100; //debug
-  1000;
+  //1000;
   //10000; // shorter test run
   //100000; // short test run
   //1000000; // shortish test run
@@ -150,7 +150,7 @@ namespace jp {
   // Reapply json selection based on the latest one (check lumicalc if false!).
   constexpr bool dojson = true;
   const constexpr array<const char*,yrs> json_ = {
-    "lumicalc/Cert_271036-284044_13TeV_ReReco_07Aug2017_Collisions16_JSON.txt",
+    "lumicalc/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
     "lumicalc/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSONmod.txt",
     "lumicalc/Cert_306896-307082_13TeV_EOY2017ReReco_Collisions17_JSON_LowPU.txt",
     "lumicalc/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt"
