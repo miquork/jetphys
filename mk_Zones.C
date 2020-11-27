@@ -40,7 +40,7 @@ TH2D *Span(TH2D *h2, const char *name, double min, double max) {
 void mk_Zones(bool quick = true, string overlayName = "") {
 
   const double minsig = 3.0; // For a single trigger, how many sigmas are interpreted as a significant deviation?
-  bool phidep = true;
+  bool phidep = false;
 
   string yrtag = "16"; // default
   if (jp::yid==1) yrtag = "17";
@@ -213,7 +213,7 @@ void mk_Zones(bool quick = true, string overlayName = "") {
             h2cold->SetBinContent(idxeta, idxphi, aval<=-minsig ? -aval : 0.0); // When it is over 3 sigma downwards
             // Fluctuation w.r.t. mean
             double bval = (GoodThreshold and MeanGood>VarGood) ? diff/MeanGood : 0.0;
-            h2b->SetBinContent(idxeta, idxphi, bval);
+            h2b->SetBinContent(idxeta, idxphi, 1.+bval);
             if (hphi) hphi->SetBinContent(idxphi, bval);
           } // for idxphi
           if (hphi and phifile) {
@@ -363,9 +363,9 @@ void mk_Zones(bool quick = true, string overlayName = "") {
         gPad->SetTopMargin(0.10);
         gPad->SetBottomMargin(0.10);
 
-        h2bs[itrg]->SetTitle(Form("Fluctuation w.r.t. #eta -strip mean (%s);#eta_{jet};#phi_{jet}",trgNames[ctrg]));
-        h2bs[itrg]->SetMinimum(-1);
-        h2bs[itrg]->SetMaximum(+1);
+        h2bs[itrg]->SetTitle(Form("Value w.r.t. #eta -strip mean (%s);#eta_{jet};#phi_{jet}",trgNames[ctrg]));
+        h2bs[itrg]->SetMinimum(0);
+        h2bs[itrg]->SetMaximum(2);
         ZeroBinsToVal(h2bs[itrg],-2);
 
         h2bs[itrg]->Draw("COLZ");

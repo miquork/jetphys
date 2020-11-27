@@ -27,10 +27,11 @@
 #include <fstream>
 #include <regex>
 
-#include "settings.h"
+//#include "settings.h"
+#include "../../../../settings.h"
 
 void Pufromslices() {
-  TString dirname="/eos/cms/store/group/phys_smp/Multijet/13TeV/UltraLegacy/UL16/MGP8CP5";
+  TString dirname="/work/jet_tuples/SIM/UL16/MGP8CP5_APV";
   //TString dirname="/eos/cms/store/group/phys_smp/Multijet/13TeV/UltraLegacy/UL16/MGP8CP5_APV";
   //std::regex fileformat("QCD_Pt_([0-9]*)to([0-9]*|Inf)_TuneCUETP8M_13TeV_pythia8.root");
   std::regex fileformat("HT_([0-9]*)to([0-9]*|Inf).root");
