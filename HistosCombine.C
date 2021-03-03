@@ -286,6 +286,15 @@ void HistosCombine(string type = "") {
   recurseCombFile(fin, fout, isdt, "hdjresp_probe_a03");
   recurseCombFile(fin, fout, isdt, "hdjresptp_tag_a03");
 
+  recurseCombFile(fin, fout, isdt, "hqgl2");
+  recurseCombFile(fin, fout, isdt, "hqgl2_g");
+  recurseCombFile(fin, fout, isdt, "hqgl2_q");
+  recurseCombFile(fin, fout, isdt, "hqgl2_u");
+  recurseCombFile(fin, fout, isdt, "hqgl2_gen");
+  recurseCombFile(fin, fout, isdt, "hqgl2_g_g");
+  recurseCombFile(fin, fout, isdt, "hqgl2_q_g");
+  recurseCombFile(fin, fout, isdt, "hqgl2_u_g");
+
   recurseCombFile(fin, fout, isdt, "hdjmass", false);
   recurseCombFile(fin, fout, isdt, "hdjmass0", false);
 
