@@ -3,7 +3,7 @@
 const vector<string> tags = {"500", "450", "400", "320", "260", "200", "140", "80", "60", "40", "0"};
 const vector<string> tags16 = {"450", "400", "320", "260", "200", "140", "80", "60", "40", "0"};
 
-void combine(const char* Era = "B", bool is16 = false) {
+void combine(const char* Era = "B") {
   TFile f("pileup_DTu.root","RECREATE");
   TFile g("pileup_DT.root","RECREATE");
   int eraNo = 0;
@@ -13,7 +13,7 @@ void combine(const char* Era = "B", bool is16 = false) {
   }
   cout << "Found " << Era << " at the index " << eraNo << endl;
 
-  const auto &tgs = is16 ? tags16 : tags;
+  const auto &tgs = jp::yid==0 ? tags16 : tags;
   double scale = 1.0;
   for (unsigned i = 0; i < tgs.size(); ++i) {
     TString file, name;
