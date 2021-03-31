@@ -24,7 +24,7 @@ void combine(const char* Era = "B", bool is16 = false) {
     h.cd();
     TH1D* handle = dynamic_cast<TH1D*>(gROOT->FindObject("pileup"));
     if (handle) {
-      handle->Scale(jp::triglumiera[eraNo][tags.size()-1]/jp::triglumiera[eraNo][tgs.size()-1-i]);
+      handle->Scale(jp::triglumiera[eraNo][tgs.size()-1]/jp::triglumiera[eraNo][tgs.size()-1-i]);
       f.cd();
       handle->SetName(name.Data());
       handle->SetTitle(name.Data());
