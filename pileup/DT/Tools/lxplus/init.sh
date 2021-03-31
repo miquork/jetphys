@@ -5,7 +5,7 @@ SETS=(/JetHT/Run2016B-21Feb2020_ver2_UL2016_HIPM-v1/MINIAOD /JetHT/Run2016C-21Fe
 SETSZB=(/ZeroBias/Run2016B-21Feb2020_ver2_UL2016_HIPM-v1/MINIAOD /ZeroBias/Run2016C-21Feb2020_UL2016_HIPM-v1/MINIAOD /ZeroBias/Run2016D-21Feb2020_UL2016_HIPM-v1/MINIAOD /ZeroBias/Run2016E-21Feb2020_UL2016_HIPM-v1/MINIAOD /ZeroBias/Run2016F-21Feb2020_UL2016_HIPM-v1/MINIAOD /ZeroBias/Run2016F-21Feb2020_UL2016-v1/MINIAOD /ZeroBias/Run2016G-21Feb2020_UL2016-v1/MINIAOD /ZeroBias/Run2016H-21Feb2020_UL2016-v1/MINIAOD)
 CERTIFICATE=/afs/cern.ch/user/h/hsiikone/work/certificates/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt
 
-for index in ${!FOLDERS[*]}; do 
+for index in ${!FOLDERS[*]}; do
     loc=${FOLDERS[$index]}
     ds=${SETS[$index]}
     dszb=${SETSZB[$index]}
@@ -21,13 +21,13 @@ for index in ${!FOLDERS[*]}; do
     python txt2json.py ${loc}/ || echo "lumis.txt not found, trying to use lumis.json"
     wait
     cd $loc
-    compareJSON.py --and lumis.json ../fullrun.json clumis.json
+    compareJSON.py --and lumis.json $CERTIFICATE clumis.json
     wait
     cd ..
     python txt2json.py ${loc}z/ || echo "lumis.txt not found, trying to use lumis.json"
     wait
     cd ${loc}z
-    compareJSON.py --and lumis.json ../fullrun.json clumis.json
+    compareJSON.py --and lumis.json $CERTIFICATE clumis.json
     wait
     cd ..
     compareJSON.py --or ${loc}/clumis.json ${loc}z/clumis.json tmp.json

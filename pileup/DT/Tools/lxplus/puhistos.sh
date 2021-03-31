@@ -3,7 +3,6 @@
 FOLDERS=(B C D E Fe Fl G H)
 TRIGGERS=(HLT_PFJet40 HLT_PFJet60 HLT_PFJet80 HLT_PFJet140 HLT_PFJet200 HLT_PFJet260 HLT_PFJet320 HLT_PFJet400 HLT_PFJet450) # HLT_PFJet500)
 
-CERTIFICATE=/afs/cern.ch/user/h/hsiikone/work/certificates/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt
 NORMTAG=/afs/cern.ch/user/h/hsiikone/work/Normtags/normtag_PHYSICS.json
 
 PILEUP=/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt

@@ -4,12 +4,13 @@ hannu.siikonen@gmail.com (errai- @github)
 Step 1: Go to CMS DAS and find the JetHT and ZeroBias MINIAOD corresponding to the run era.
 Step 2: List these accroding to the template in the init.sh file.
 Step 3: (optional) Triggerlister can be run to check the active triggers.
-Step 4: Set the correct certificate and run init.sh
-Step 5: Set the correct normtag and run brilcalc.sh
+Step 4: Set the correct certificate and run init.sh (this produces luminosity jsons)
+Step 5: Set the correct normtag and run brilcalc.sh (this produces the luminosity information, to be added in settins.h)
 Step 6: Set all correct settings and run puhistos.sh:
- - One needs to adjust the pileup file, normtag and datacert here
+ - One needs to adjust the pileup file and normtag here
  - One needs to check that the min bias xsec has not changed (default) for brilcalc
-Step 7: Copy everything from lxplus to a jetphys installation; run "root -l -b -q ../combine.C". This will create a collection of pileup_DTu.root.
- - The unnormalized histograms may be safely added with hadd.
- - This requires the correct weight values to be present in settings.h.
-Step 8: Run "root -l -b -q ../normalize.C". This will result in appropriately weighted histos.
+Step 7: Copy everything from lxplus to a jetphys installation; run "root -l -b -q ../combine.C\(\"X\"\)". This will create a collection of pileup_DTu.root (and pileup_DT.root).
+ - Here, X refers to the era picked from settins.h (e.g. X=Fe) - check that the era index printed on command line is OK.
+ - The unnormalized histograms (pileup_DTu.root) may be safely added with hadd for combinations, e.g. BCD.
+ - This requires the correct weight values and run year settings to be present in settings.h.
+Step 8: Run "root -l -b -q ../normalize.C" for the combinations. This will result in appropriately weighted histos (pileup_DT.root).
