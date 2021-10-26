@@ -59,16 +59,17 @@ HistosEta::HistosEta(TDirectory *dir, string trigname, double pttrg, double ptmi
      //                           ";p_{T,probe};#eta;MPF",
      //                           jp::npts,&jp::ptrange[0],jp::nwetas,&jp::wetarange[0],na,&va[0]) );
     }
+  }
 
-    // Weights:
-    for (unsigned i = 0; i < alpharange.size(); ++i) {
-      hdjasymm[i]->Sumw2();
-      hdjasymmtp[i]->Sumw2();
-      //hdjasymmpt[i]->Sumw2();
-      hdjmpf[i]->Sumw2();
-      hdjmpftp[i]->Sumw2();
-      //hdjmpfpt[i]->Sumw2();
-    }
+  if (jp::do2dProfiles) {
+    p2djasymm    = new TProfile2D("p2djasymm","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
+    p2djasymmtp  = new TProfile2D("p2djasymmtp","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
+    p2djasymmpt  = new TProfile2D("p2djasymmpt","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
+    p2djasymmtrg = new TProfile2D("p2djasymmtrg","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
+    p2djmpf      = new TProfile2D("p2djmpf","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
+    p2djmpftp    = new TProfile2D("p2djmpftp","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
+    p2djmpfpt    = new TProfile2D("p2djmpfpt","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
+    p2djmpftrg   = new TProfile2D("p2djmpftrg","",jp::netas,jp::etarange,jp::nphis,jp::phirange);
   }
 
   // Special studies for tag between 50 and 60 GeV.

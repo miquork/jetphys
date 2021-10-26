@@ -2304,26 +2304,27 @@ void HistosFill::FillSingleEta(HistosEta *h, Float_t* _pt, Float_t* _eta, Float_
   // check if required trigger fired
   if (!fired or !_pass) return;
 
-  // Tag & probe hoods
+  // Tag & probe hoods (TODO: does this work in the genjet mode?)
   int i0 = jt3leads[0];
   int i1 = jt3leads[1];
   int i2 = jt3leads[2];
   if (_pass_qcdmet) {
-    if (i0>=0 and _jetids[i0] and jtpt[i0]>jp::recopt and i1>=0 and _jetids[i1] and jtpt[i1]>jp::recopt) { // Quality conditios for leading jets
-      double dphi = DPhi(jtphi[i0], jtphi[i1]);
+    if (i0>=0 and _jetids[i0] and _pt[i0]>jp::recopt and i1>=0 and _jetids[i1] and _pt[i1]>jp::recopt) { // Quality conditios for leading jets
+      double dphi = DPhi(_phi[i0], _phi[i1]);
       if (dphi > 2.7) { // Back-to-back condition
-        double pt3 = ((i2>=0 and jtpt[i2]>jp::recopt) ? jtpt[i2] : 0.);
-        double ptave = 0.5 * (jtpt[i0] + jtpt[i1]);
+        double pt3 = ((i2>=0 and _pt[i2]>jp::recopt) ? _pt[i2] : 0.);
+        double ptave = 0.5 * (_pt[i0] + _pt[i1]);
         double alpha = pt3/ptave;
 
         for (auto itag_lead = 0u; itag_lead<2u; ++itag_lead) { // Look for both t&p combos for the leading jets
-          int itag = jt3leads[itag_lead];
-          int iprobe = jt3leads[(itag_lead==0 ? 1 : 0)];
-          double etatag = jteta[itag];
-          double etaprobe = jteta[iprobe];
+          const int itag = jt3leads[itag_lead];
+          const int iprobe = jt3leads[(itag_lead==0 ? 1 : 0)];
+          const double etatag = _eta[itag];
+          const double etaprobe = _eta[iprobe];
           if (fabs(etatag) < 1.3) { // Tag required to be in the barrel region
-            double pttag = jtpt[itag];
-            double ptprobe = _pt[iprobe];
+            const double pttag = _pt[itag];
+            const double ptprobe = _pt[iprobe];
+            const double phiprobe =
             // Special PU studies
             if (pttag>50 and pttag<60) {
               h->hnpvall_pt50to60->Fill(npv, _w);
@@ -2350,17 +2351,39 @@ void HistosFill::FillSingleEta(HistosEta *h, Float_t* _pt, Float_t* _eta, Float_
               }
             }
 
-            // for composition vs eta
-            if (alpha < 0.3 and pttag >= h->ptmin and pttag < h->ptmax) { // Alpha and trigger
-              assert(h->pchftp_vseta); h->pchftp_vseta->Fill(etaprobe, jtchf[iprobe], _w);
-              assert(h->pneftp_vseta); h->pneftp_vseta->Fill(etaprobe, jtnef[iprobe]-jthef[iprobe], _w);
-              assert(h->pnhftp_vseta); h->pnhftp_vseta->Fill(etaprobe, jtnhf[iprobe]-jthhf[iprobe], _w);
-              assert(h->pceftp_vseta); h->pceftp_vseta->Fill(etaprobe, jtcef[iprobe], _w);
-              assert(h->pmuftp_vseta); h->pmuftp_vseta->Fill(etaprobe, jtmuf[iprobe], _w);
-              assert(h->phhftp_vseta); h->phhftp_vseta->Fill(etaprobe, jthhf[iprobe], _w);
-              assert(h->pheftp_vseta); h->pheftp_vseta->Fill(etaprobe, jthef[iprobe], _w);
-              assert(h->ppuftp_vseta); h->ppuftp_vseta->Fill(etaprobe, jtbetaprime[iprobe], _w);
-            } // select pt bin for profiles vseta
+            if (alpha < 0.3) {
+              if (jp::do2dProfiles) {
+                const double asymm0 = (ptprobe - pttag)/2.;
+                const double mpf0 = met1*cos(DPhi(metphi1,_phi[itag]))/2.;
+                if (ptave >= h->ptmin) {
+                  assert(h->p2djasymm); h->p2djasymm->Fill(etaprobe, phiprobe, asymm0/ptave);
+                  assert(h->p2djmpf); h->p2djmpf->Fill(etaprobe, phiprobe, mpf0/ptave);
+                }
+                if (pttag >= h->ptmin) {
+                  assert(h->p2djasymmtp); h->p2djasymmtp->Fill(etaprobe, phiprobe, asymm0/pttag);
+                  assert(h->p2djmpftp); h->p2djmpftp->Fill(etaprobe, phiprobe, mpf0/pttag);
+                }
+                if (ptprobe >= h->ptmin) {
+                  assert(h->p2djasymmpt); h->p2djasymmpt->Fill(etaprobe, phiprobe, asymm0/ptprobe);
+                  assert(h->p2djmpfpt); h->p2djmpfpt->Fill(etaprobe, phiprobe, mpf0/ptprobe);
+                  // Pt from trigger limit (except for ZeroBias).
+                  const ptpseudo = std::max(15., h->ptmin);
+                  assert(h->p2djasymmtrg); h->p2djasymmtrg->Fill(etaprobe, phiprobe, asymm0/ptpseudo);
+                  assert(h->p2djmpftrg); h->p2djmpftrg->Fill(etaprobe, phiprobe, mpf0/ptpseudo);
+                }
+              }
+              // for composition vs eta
+              if (pttag >= h->ptmin and pttag < h->ptmax) { // Alpha and trigger
+                assert(h->pchftp_vseta); h->pchftp_vseta->Fill(etaprobe, jtchf[iprobe], _w);
+                assert(h->pneftp_vseta); h->pneftp_vseta->Fill(etaprobe, jtnef[iprobe]-jthef[iprobe], _w);
+                assert(h->pnhftp_vseta); h->pnhftp_vseta->Fill(etaprobe, jtnhf[iprobe]-jthhf[iprobe], _w);
+                assert(h->pceftp_vseta); h->pceftp_vseta->Fill(etaprobe, jtcef[iprobe], _w);
+                assert(h->pmuftp_vseta); h->pmuftp_vseta->Fill(etaprobe, jtmuf[iprobe], _w);
+                assert(h->phhftp_vseta); h->phhftp_vseta->Fill(etaprobe, jthhf[iprobe], _w);
+                assert(h->pheftp_vseta); h->pheftp_vseta->Fill(etaprobe, jthef[iprobe], _w);
+                assert(h->ppuftp_vseta); h->ppuftp_vseta->Fill(etaprobe, jtbetaprime[iprobe], _w);
+              } // select pt bin for profiles vseta
+            } // alpha cut
           } // etatag < 1.3
         } // tag & probe
       } // dphi > 2.7

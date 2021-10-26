@@ -63,6 +63,14 @@ class HistosEta {
   vector<TH3D *> hdjmpf;
   vector<TH3D *> hdjmpftp;
   //vector<TH3D *> hdjmpfpt;
+  TProfile2D *p2djasymm;
+  TProfile2D *p2djasymmtp;
+  TProfile2D *p2djasymmpt;
+  TProfile2D *p2djasymmtrg;
+  TProfile2D *p2djmpf;
+  TProfile2D *p2djmpftp;
+  TProfile2D *p2djmpfpt;
+  TProfile2D *p2djmpftrg;
 
   TH1D *hrho_pt50to60;
   TH1D *hnpvall_pt50to60;
