@@ -2324,7 +2324,7 @@ void HistosFill::FillSingleEta(HistosEta *h, Float_t* _pt, Float_t* _eta, Float_
           if (fabs(etatag) < 1.3) { // Tag required to be in the barrel region
             const double pttag = _pt[itag];
             const double ptprobe = _pt[iprobe];
-            const double phiprobe =
+            const double phitag = _phi[itag];
             // Special PU studies
             if (pttag>50 and pttag<60) {
               h->hnpvall_pt50to60->Fill(npv, _w);
@@ -2335,10 +2335,10 @@ void HistosFill::FillSingleEta(HistosEta *h, Float_t* _pt, Float_t* _eta, Float_
               h->hchf_pt50to60->Fill(jtchf[iprobe], _w);
             }
             if (jp::do3dHistos) {
-              double asymm = (ptprobe - pttag)/(2*ptave);
-              double mpf = met1*cos(DPhi(metphi1,_phi[itag]))/(2*ptave);
+              const double asymm = (ptprobe - pttag)/(2*ptave);
+              const double mpf = met1*cos(DPhi(metphi1,phitag))/(2*ptave);
               for (auto alphaidx = 0u; alphaidx < h->alpharange.size(); ++alphaidx) {
-                float alphasel = h->alpharange[alphaidx];
+                const float alphasel = h->alpharange[alphaidx];
                 if (alpha<alphasel) {
                   // Val 10 = excluded, -10 = ok
                   h->hdjasymm[alphaidx]  ->Fill(ptave, etaprobe, asymm, _w);
@@ -2353,23 +2353,24 @@ void HistosFill::FillSingleEta(HistosEta *h, Float_t* _pt, Float_t* _eta, Float_
 
             if (alpha < 0.3) {
               if (jp::do2dProfiles) {
+                const double phiprobe = _phi[iprobe];
                 const double asymm0 = (ptprobe - pttag)/2.;
-                const double mpf0 = met1*cos(DPhi(metphi1,_phi[itag]))/2.;
+                const double mpf0 = met1*cos(DPhi(metphi1,phitag))/2.;
                 if (ptave >= h->ptmin) {
-                  assert(h->p2djasymm); h->p2djasymm->Fill(etaprobe, phiprobe, asymm0/ptave);
-                  assert(h->p2djmpf); h->p2djmpf->Fill(etaprobe, phiprobe, mpf0/ptave);
+                  assert(h->p2djasymm); h->p2djasymm->Fill(etaprobe, phiprobe, asymm0/ptave, _w);
+                  assert(h->p2djmpf);   h->p2djmpf  ->Fill(etaprobe, phiprobe, mpf0  /ptave, _w);
                 }
                 if (pttag >= h->ptmin) {
-                  assert(h->p2djasymmtp); h->p2djasymmtp->Fill(etaprobe, phiprobe, asymm0/pttag);
-                  assert(h->p2djmpftp); h->p2djmpftp->Fill(etaprobe, phiprobe, mpf0/pttag);
+                  assert(h->p2djasymmtp); h->p2djasymmtp->Fill(etaprobe, phiprobe, asymm0/pttag, _w);
+                  assert(h->p2djmpftp);   h->p2djmpftp  ->Fill(etaprobe, phiprobe, mpf0  /pttag, _w);
                 }
                 if (ptprobe >= h->ptmin) {
-                  assert(h->p2djasymmpt); h->p2djasymmpt->Fill(etaprobe, phiprobe, asymm0/ptprobe);
-                  assert(h->p2djmpfpt); h->p2djmpfpt->Fill(etaprobe, phiprobe, mpf0/ptprobe);
+                  assert(h->p2djasymmpt); h->p2djasymmpt->Fill(etaprobe, phiprobe, asymm0/ptprobe, _w);
+                  assert(h->p2djmpfpt);   h->p2djmpfpt  ->Fill(etaprobe, phiprobe, mpf0  /ptprobe, _w);
                   // Pt from trigger limit (except for ZeroBias).
-                  const ptpseudo = std::max(15., h->ptmin);
-                  assert(h->p2djasymmtrg); h->p2djasymmtrg->Fill(etaprobe, phiprobe, asymm0/ptpseudo);
-                  assert(h->p2djmpftrg); h->p2djmpftrg->Fill(etaprobe, phiprobe, mpf0/ptpseudo);
+                  const double ptpseudo = std::max(15., h->ptmin);
+                  assert(h->p2djasymmtrg); h->p2djasymmtrg->Fill(etaprobe, phiprobe, asymm0/ptpseudo, _w);
+                  assert(h->p2djmpftrg);   h->p2djmpftrg  ->Fill(etaprobe, phiprobe, mpf0  /ptpseudo, _w);
                 }
               }
               // for composition vs eta
