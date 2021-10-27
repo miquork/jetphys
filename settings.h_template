@@ -9,6 +9,21 @@
 // Near the end of this files the user can also find binnings, which should staty static,
 // in general. Having a more or less static binning enables us to make better comparison between historical and present results.
 
+// Values 0/1. Set to 0 if no debug, and to 1 if debug.
+#define DEBUG 0
+// Values 0/1. This flag should not be set to one, unless the user understands all the consequences.
+// This resembles "DEBUG" in the way that it acts as a safeguard against naive mistakes, but eats performance.
+#define EXPERT 0
+// Values 0/1. Set to 1 to perform jet resolution correction in MC, 0 otherwise.
+#define JETRESO 1
+// New handling for triggers etc.; possibility to comment this out is left for legacy use.
+#define NEWMODE
+
+// Will assert be used in the programs? More than 1/3 reduction of run time if off.
+#if DEBUG == 1
+#define USEASSERT
+#endif
+
 #ifndef STNGS
 #define STNGS
 
@@ -34,16 +49,6 @@ using std::string;
 using std::cout;
 using std::endl;
 using std::regex;
-
-// Values 0/1. Set to 0 if no debug, and to 1 if debug.
-#define DEBUG 0
-// Values 0/1. This flag should not be set to one, unless the user understands all the consequences.
-// This resembles "DEBUG" in the way that it acts as a safeguard against naive mistakes, but eats performance.
-#define EXPERT 0
-// Values 0/1. Set to 1 to perform jet resolution correction in MC, 0 otherwise.
-#define JETRESO 1
-// New handling for triggers etc.; possibility to comment this out is left for legacy use.
-#define NEWMODE
 
 namespace jp {
   //{ BEGIN fundamental settings: these are the ones that need most often changes
@@ -100,6 +105,8 @@ namespace jp {
   constexpr bool doEtaHistosMcResponse = false; // Special studies
   // Toggle 3D asymmetry and mpf histos off, if too much space is consumed
   constexpr bool do3dHistos = false;
+  // Toggle 3D asymmetry and mpf tprofile2ds off, if too much space is consumed
+  constexpr bool do2dProfiles = false;
   // Toggle phi histograms
   constexpr bool doPhiHistos = false;
   // Toggle development histos
@@ -812,11 +819,6 @@ namespace jp {
   constexpr bool debug = DEBUG;
   // Save git version info (recommended)
   constexpr bool gitinfo = !EXPERT;
-
-  // Will assert be used in the programs? More than 1/3 reduction of run time if off.
-  #if DEBUG == 1
-  #define USEASSERT
-  #endif
   //} END Important handles that should not be touched most of the time
 
   //{ BEGIN Legacy settings that might not work anymore

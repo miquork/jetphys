@@ -15,7 +15,6 @@ JetMETCorrections
 *doc*
 *tmp*
 *pdf
-mk_histosFill.C
 settings.h*
 pileup/Run*
 pileup/RR*
